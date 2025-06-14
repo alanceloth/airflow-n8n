@@ -26,11 +26,11 @@ default_args = {
 )
 def n8n_webhook_dag():
     endpoint_url = Variable.get("N8N_WEBHOOK_ENDPOINT")
-    
+
     # Task to check if endpoint is available
     check_endpoint = HttpSensor(
         task_id='check_endpoint_available',
-        http_conn_id='http_default',
+        http_conn_id='http_n8n',
         endpoint=endpoint_url,
         request_params={},
         response_check=lambda response: response.status_code == 200,
@@ -43,7 +43,7 @@ def n8n_webhook_dag():
     call_webhook = HttpOperator(
         task_id='call_n8n_webhook',
         method='POST',
-        http_conn_id='http_default',
+        http_conn_id='http_n8n',
         endpoint=endpoint_url,
         headers={"Content-Type": "application/json"},
         data=json.dumps({"message": "BTC"}),
