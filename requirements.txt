@@ -2,3 +2,4 @@
 apache-airflow-providers-amazon
 apache-airflow-providers-common-messaging
 aiobotocore
+boto3
