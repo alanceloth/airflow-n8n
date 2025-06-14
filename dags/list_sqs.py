@@ -37,10 +37,13 @@ def exemplo_sqs():
 
     @task
     def listar_filas():
+        conn = BaseHook.get_connection('aws_default')
+        print("Extras da Connection:", conn.extra_dejson)
         sqs = get_sqs_client()
+        # imprime o host que o boto3 vai usar
+        print("Endpoint boto3:", sqs._endpoint.host)
         resp = sqs.list_queues()
-        print("ListQueues:", resp.get('QueueUrls'))
-        return resp.get('QueueUrls') or []
+        print("Queues:", resp.get('QueueUrls'))
 
     @task
     def enviar_mensagem(queue_url: str):
