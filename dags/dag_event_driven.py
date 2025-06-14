@@ -1,11 +1,10 @@
 from datetime import datetime, timedelta
-from airflow.decorators import dag, task
 from airflow.models import Variable
 from airflow.providers.http.operators.http import HttpOperator
 from airflow.providers.http.sensors.http import HttpSensor
 import json
 from airflow.providers.common.messaging.triggers.msg_queue import MessageQueueTrigger
-from airflow.sdk import Asset, AssetWatcher
+from airflow.sdk import Asset, AssetWatcher, dag, task
 
 # Default arguments for the DAG
 default_args = {
@@ -18,9 +17,9 @@ default_args = {
 }
 
 trigger = MessageQueueTrigger(
-    aws_conn_id='aws_default',
-    queue='http://sqs.us-east-1.d43e-2804-d78-6db-5a00-6-ec22-c627-5d97.ngrok-free.app:4566/000000000000/create_user',
-    waiter_delay=30,
+    aws_conn_id="aws_default",
+    queue="http://sqs.us-east-1.d43e-2804-d78-6db-5a00-6-ec22-c627-5d97.ngrok-free.app:4566/000000000000/create_user",
+    waiter_delay=30
 )
 
 sqs_asset_queue = Asset(
@@ -43,7 +42,7 @@ def n8n_webhook_dag():
     # Task to check if endpoint is available
     check_endpoint = HttpSensor(
         task_id='check_endpoint_available',
-        http_conn_id='http_n8n',
+        http_conn_id="http_n8n",
         endpoint=endpoint_url,
         request_params={},
         response_check=lambda response: response.status_code == 200,
@@ -56,7 +55,7 @@ def n8n_webhook_dag():
     call_webhook = HttpOperator(
         task_id='call_n8n_webhook',
         method='POST',
-        http_conn_id='http_n8n',
+        http_conn_id="http_n8n",
         endpoint=endpoint_url,
         headers={"Content-Type": "application/json"},
         data=json.dumps({"message": "BTC"}),
@@ -65,11 +64,16 @@ def n8n_webhook_dag():
         do_xcom_push=True
     )
 
+    @task
+    def process_message(triggering_asset_events=None):
+        for event in triggering_asset_events[sqs_asset_queue]:
+            print(f"Processing message: {event.extra['payload']['message_batch'][0]['Body']}")
+
     # Task to check the response
-    @task(task_id='check_webhook_response')
+    @task(task_id="check_webhook_response")
     def check_response(**context):
         ti = context['ti']
-        response = ti.xcom_pull(task_ids='call_n8n_webhook')
+        response = ti.xcom_pull(task_ids="call_n8n_webhook")
         
         if not response:
             raise ValueError("No response received from webhook")
@@ -86,7 +90,7 @@ def n8n_webhook_dag():
     webhook_response = call_webhook
     check_result = check_response()
     
-    check_endpoint >> webhook_response >> check_result
+    process_message >> check_endpoint >> webhook_response >> check_result
 
 # Instantiate the DAG
 n8n_webhook_dag = n8n_webhook_dag()
