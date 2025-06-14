@@ -17,7 +17,7 @@ default_args = {
     dag_id='n8n_webhook_btc_report',
     default_args=default_args,
     description='DAG to call n8n webhook and process response',
-    schedule_interval=timedelta(days=1),  # Runs once a day, adjust as needed
+    schedule=timedelta(days=1),  # Runs once a day, adjust as needed
     start_date=datetime(2025, 6, 1),
     catchup=False,
     tags=['n8n', 'webhook', 'btc', 'report'],
