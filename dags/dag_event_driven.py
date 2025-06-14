@@ -5,7 +5,7 @@ from airflow.providers.http.operators.http import HttpOperator
 from airflow.providers.http.sensors.http import HttpSensor
 import json
 from airflow.providers.common.messaging.triggers.msg_queue import MessageQueueTrigger
-from airflow.sdk import Asset, AssetWatcher, dag, task
+from airflow.sdk import Asset, AssetWatcher
 
 # Default arguments for the DAG
 default_args = {
